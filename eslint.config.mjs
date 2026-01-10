@@ -1,18 +1,32 @@
-import { defineConfig, globalIgnores } from "eslint/config";
-import nextVitals from "eslint-config-next/core-web-vitals";
-import nextTs from "eslint-config-next/typescript";
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  // Optimasi untuk development
+  experimental: {
+    optimizeCss: true,
+  },
+  
+  // Webpack config untuk mengatasi masalah compiling
+  webpack: (config, { dev, isServer }) => {
+    if (dev && !isServer) {
+      // Optimasi untuk development
+      config.watchOptions = {
+        poll: 1000,
+        aggregateTimeout: 300,
+        ignored: /node_modules/,
+      };
+    }
+    return config;
+  },
 
-const eslintConfig = defineConfig([
-  ...nextVitals,
-  ...nextTs,
-  // Override default ignores of eslint-config-next.
-  globalIgnores([
-    // Default ignores of eslint-config-next:
-    ".next/**",
-    "out/**",
-    "build/**",
-    "next-env.d.ts",
-  ]),
-]);
+  // Optimasi untuk TypeScript
+  typescript: {
+    ignoreBuildErrors: false,
+  },
 
-export default eslintConfig;
+  // ESLint config
+  eslint: {
+    ignoreDuringBuilds: false,
+  },
+};
+
+export default nextConfig;

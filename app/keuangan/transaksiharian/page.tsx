@@ -7,7 +7,8 @@ import { CashFlowWithDetails, BankAccount } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import CashFlowModal from "./ModalTambahTransaksi";
-import { Plus, Download } from "lucide-react";
+import { Plus, Download, TrendingUp, TrendingDown, DollarSign, Calendar, Filter } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function CashFlowPage() {
     const [data, setData] = useState<CashFlowWithDetails[]>([]);
@@ -16,9 +17,14 @@ export default function CashFlowPage() {
     const [search, setSearch] = useState("");
     const [typeFilter, setTypeFilter] = useState(""); // 'INCOME' | 'EXPENSE'
     const [bankAccountFilter, setBankAccountFilter] = useState(""); // Bank account ID
+    const [categoryFilter, setCategoryFilter] = useState(""); // Category filter
+    const [startDateFilter, setStartDateFilter] = useState(""); // Start date
+    const [endDateFilter, setEndDateFilter] = useState(""); // End date
     const [isLoading, setIsLoading] = useState(false);
     const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
-    
+    const [summary, setSummary] = useState({ totalIncome: 0, totalExpense: 0, netCashFlow: 0 });
+    const [categories, setCategories] = useState<string[]>([]);
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedEntry, setSelectedEntry] = useState<CashFlowWithDetails | null>(null);
 
@@ -44,11 +50,27 @@ export default function CashFlowPage() {
             });
             if (typeFilter) params.append('type', typeFilter);
             if (bankAccountFilter) params.append('bank_account_id', bankAccountFilter);
+            if (categoryFilter) params.append('category', categoryFilter);
+            if (startDateFilter) params.append('start_date', startDateFilter);
+            if (endDateFilter) params.append('end_date', endDateFilter);
 
             const response = await fetch(`/api/keuangan/transaksiharian?${params}`);
             const result = await response.json();
             setData(result.data || []);
             setPageCount(Math.ceil(result.total / result.limit));
+
+            // Calculate summary
+            const income = result.data?.filter((item: any) => item.jenis === 'masuk').reduce((sum: number, item: any) => sum + item.jumlah, 0) || 0;
+            const expense = result.data?.filter((item: any) => item.jenis === 'keluar').reduce((sum: number, item: any) => sum + item.jumlah, 0) || 0;
+            setSummary({
+                totalIncome: income,
+                totalExpense: expense,
+                netCashFlow: income - expense
+            });
+
+            // Extract unique categories
+            const uniqueCategories = [...new Set(result.data?.map((item: any) => item.kategori).filter(Boolean) || [])] as string[];
+            setCategories(uniqueCategories);
         } catch (error) {
             console.error("Failed to fetch cash flow entries", error);
         } finally {

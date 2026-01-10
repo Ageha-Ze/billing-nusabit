@@ -13,6 +13,31 @@ export async function createCashFlowEntry(entryData: {
   kas_id: string | null;
 }) {
     try {
+        // Calculate saldo_setelah (balance after transaction)
+        let saldoSetelah = 0;
+
+        if (entryData.kas_id) {
+            // Fetch current balance
+            const { data: bankAccount, error: fetchAccountError } = await supabaseAdmin
+                .from('bank_accounts')
+                .select('balance')
+                .eq('id', entryData.kas_id)
+                .single();
+
+            if (fetchAccountError || !bankAccount) {
+                console.error("Error fetching bank account:", fetchAccountError);
+                return { error: fetchAccountError?.message || "Failed to fetch bank account." };
+            }
+
+            // Calculate new balance after transaction
+            saldoSetelah = bankAccount.balance;
+            if (entryData.jenis === 'masuk') {
+                saldoSetelah += entryData.jumlah;
+            } else if (entryData.jenis === 'keluar') {
+                saldoSetelah -= entryData.jumlah;
+            }
+        }
+
         const { data: newEntry, error: entryError } = await supabaseAdmin
             .from("transaksi_harian")
             .insert([{
@@ -22,6 +47,7 @@ export async function createCashFlowEntry(entryData: {
                 keterangan: entryData.keterangan,
                 tanggal: entryData.tanggal,
                 kas_id: entryData.kas_id,
+                saldo_setelah: saldoSetelah,
                 created_by: null, // You can set this to the current user if available
             }])
             .select()
@@ -34,27 +60,9 @@ export async function createCashFlowEntry(entryData: {
 
         // Update bank account balance if kas_id is provided
         if (newEntry.kas_id) {
-            const { data: bankAccount, error: fetchAccountError } = await supabaseAdmin
-                .from('bank_accounts')
-                .select('balance')
-                .eq('id', newEntry.kas_id)
-                .single();
-
-            if (fetchAccountError || !bankAccount) {
-                console.error("Error fetching bank account for update:", fetchAccountError);
-                return { error: fetchAccountError?.message || "Failed to fetch bank account." };
-            }
-
-            let newBalance = bankAccount.balance;
-            if (newEntry.jenis === 'masuk') {
-                newBalance += newEntry.jumlah;
-            } else if (newEntry.jenis === 'keluar') {
-                newBalance -= newEntry.jumlah;
-            }
-
             const { error: balanceUpdateError } = await supabaseAdmin
                 .from("bank_accounts")
-                .update({ balance: newBalance })
+                .update({ balance: saldoSetelah })
                 .eq("id", newEntry.kas_id);
 
             if (balanceUpdateError) {
@@ -62,7 +70,7 @@ export async function createCashFlowEntry(entryData: {
                 return { error: balanceUpdateError.message };
             }
         }
-        
+
         revalidatePath("/keuangan/transaksiharian");
         revalidatePath("/master/kas"); // Revalidate kas list
         revalidatePath("/dashboard");

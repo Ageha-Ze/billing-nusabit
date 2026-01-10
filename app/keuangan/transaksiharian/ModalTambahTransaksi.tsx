@@ -110,7 +110,7 @@ export default function CashFlowModal({ isOpen, onClose, cashFlowEntry }: CashFl
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md bg-white">
         <DialogHeader>
           <DialogTitle>{cashFlowEntry ? "Edit Cash Flow Entry" : "Add New Cash Flow Entry"}</DialogTitle>
         </DialogHeader>

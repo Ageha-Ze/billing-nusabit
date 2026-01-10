@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { logout } from '@/app/login/actions';
 import { useUser } from '@/contexts/UserContext';
+import { useRouter } from 'next/navigation';
 
 interface MenuItem {
   icon: React.ComponentType<{ className?: string }>;
@@ -75,6 +76,7 @@ export default function Sidebar() {
   const [expandedMenu, setExpandedMenu] = useState<string[]>(['Master Data', 'Keuangan']);
   const pathname = usePathname();
   const { user } = useUser();
+  const router = useRouter();
 
   const toggleMenu = (label: string) => {
     setExpandedMenu(prev =>
@@ -96,6 +98,7 @@ export default function Sidebar() {
 
   const handleLogout = async () => {
     await logout();
+    router.push('/login');
   };
 
   return (
@@ -160,7 +163,7 @@ export default function Sidebar() {
           sidebarOpen ? "translate-x-0 w-64" : "-translate-x-full w-0"
         )}
       >
-        <div className="h-full px-3 pb-4 overflow-y-auto">
+        <div className="h-full px-3 pb-16 overflow-y-auto">
           <ul className="space-y-2 font-medium">
             {filteredMenuItems.map((item) => (
               <li key={item.label}>

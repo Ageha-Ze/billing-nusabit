@@ -79,7 +79,12 @@ export const getColumns = (onDeleted: () => void): ColumnDef<User>[] => [
                 Copy user ID
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => alert("Edit not implemented")}>Edit user</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push(`/master/user/${user.id}`)}>
+                View Details
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push(`/master/user/${user.id}/edit`)}>
+                Edit User
+              </DropdownMenuItem>
               <DropdownMenuItem 
                 className="text-red-600"
                 onClick={() => handleDelete(user.id, onDeleted)}

@@ -13,32 +13,34 @@ export async function GET(request: Request) {
 
     try {
         let query = supabaseAdmin
-            .from('cash_flow')
+            .from('transaksi_harian')
             .select(`
                 id,
-                type,
-                category,
-                amount,
-                description,
-                date,
+                jenis,
+                kategori,
+                jumlah,
+                keterangan,
+                tanggal,
                 created_at,
                 bank_account:bank_accounts(name, bank_name)
             `);
-        
+
         if (search) {
-            query = query.or(`description.ilike.%${search}%,category.ilike.%${search}%`);
+            query = query.or(`keterangan.ilike.%${search}%,kategori.ilike.%${search}%`);
         }
         if (typeFilter) {
-            query = query.eq('type', typeFilter);
+            // Convert INCOME/EXPENSE to masuk/keluar
+            const jenisValue = typeFilter === 'INCOME' ? 'masuk' : 'keluar';
+            query = query.eq('jenis', jenisValue);
         }
         if (bankAccountFilter) {
-            query = query.eq('bank_account_id', bankAccountFilter);
+            query = query.eq('kas_id', bankAccountFilter);
         }
         if (startDateFilter) {
-            query = query.gte('date', startDateFilter);
+            query = query.gte('tanggal', startDateFilter);
         }
         if (endDateFilter) {
-            query = query.lte('date', endDateFilter);
+            query = query.lte('tanggal', endDateFilter);
         }
 
         const { data, error } = await query;
@@ -51,17 +53,17 @@ export async function GET(request: Request) {
         // Define columns for CSV
         const columns = [
             { header: "ID", accessorKey: "id" },
-            { header: "Date", accessorKey: "date" },
-            { header: "Type", accessorKey: "type" },
-            { header: "Category", accessorKey: "category" },
-            { header: "Description", accessorKey: "description" },
-            { header: "Amount", accessorKey: "amount" },
+            { header: "Date", accessorKey: "tanggal" },
+            { header: "Type", accessorKey: "jenis" },
+            { header: "Category", accessorKey: "kategori" },
+            { header: "Description", accessorKey: "keterangan" },
+            { header: "Amount", accessorKey: "jumlah" },
             { header: "Bank Account Name", accessorKey: "bank_account.name" },
             { header: "Bank Name", accessorKey: "bank_account.bank_name" },
             { header: "Created At", accessorKey: "created_at" },
         ];
 
-        const csv = convertToCsv(data as CashFlowWithDetails[], columns);
+        const csv = convertToCsv(data, columns);
 
         return new NextResponse(csv, {
             headers: {

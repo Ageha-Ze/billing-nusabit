@@ -7,6 +7,7 @@ import { CashFlowWithDetails, BankAccount } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
+import { Download } from "lucide-react";
 
 export default function CashFlowReportPage() {
     const [data, setData] = useState<CashFlowWithDetails[]>([]);
@@ -80,7 +81,10 @@ export default function CashFlowReportPage() {
             <div className="flex justify-between items-center mb-4">
                 <h1 className="text-2xl font-bold">Cash Flow Report</h1>
                 <Link href="/laporan/cashflow/export">
-                    <Button>Export Report</Button>
+                    <Button>
+                        <Download className="h-4 w-4 mr-2" />
+                        Export Report
+                    </Button>
                 </Link>
             </div>
             

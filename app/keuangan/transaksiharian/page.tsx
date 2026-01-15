@@ -7,8 +7,7 @@ import { CashFlowWithDetails, BankAccount } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import CashFlowModal from "./ModalTambahTransaksi";
-import { Plus, Download, TrendingUp, TrendingDown, DollarSign, Calendar, Filter } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Search, Plus, TrendingUp, TrendingDown, DollarSign, CreditCard } from "lucide-react";
 
 export default function CashFlowPage() {
     const [data, setData] = useState<CashFlowWithDetails[]>([]);
@@ -105,57 +104,167 @@ export default function CashFlowPage() {
         setSearch(newSearch);
     }
 
-    const columns = useMemo(() => getColumns(fetchData), [fetchData]);
+    const columns = useMemo(() => getColumns(fetchData, handleOpenModal), [fetchData, handleOpenModal]);
 
     return (
-        <div>
-            <div className="flex justify-between items-center mb-4">
-                <h1 className="text-2xl font-bold">Daily Transactions</h1>
-                <Button onClick={() => handleOpenModal()}>
-                    <Plus className="h-4 w-4 mr-2" />
+        <div className="p-6 max-w-7xl mx-auto space-y-6">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold text-gray-900">Daily Transactions</h1>
+                    <p className="text-gray-600 mt-1">Track and manage daily cash flow entries</p>
+                </div>
+                <Button
+                    onClick={() => handleOpenModal()}
+                    className="bg-green-600 hover:bg-green-700 text-white font-medium"
+                >
+                    <Plus className="w-5 h-5 mr-2" />
                     Add Transaction
                 </Button>
             </div>
-            
-            <div className="flex flex-wrap items-center gap-2 mb-4">
-                <form onSubmit={handleSearch} className="flex items-center gap-2">
-                    <Input name="search" placeholder="Search by description or category..." className="max-w-sm"/>
-                    <Button type="submit">Search</Button>
-                </form>
-                <select
-                    value={typeFilter}
-                    onChange={(e) => setTypeFilter(e.target.value)}
-                    className="mt-1 block px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                >
-                    <option value="">All Types</option>
-                    <option value="INCOME">Income</option>
-                    <option value="EXPENSE">Expense</option>
-                </select>
 
-                <select
-                    value={bankAccountFilter}
-                    onChange={(e) => setBankAccountFilter(e.target.value)}
-                    className="mt-1 block px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                >
-                    <option value="">All Bank Accounts</option>
-                    {bankAccounts.map((account) => (
-                        <option key={account.id} value={account.id}>
-                            {account.name} - {account.account_number}
-                        </option>
-                    ))}
-                </select>
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Total Transactions */}
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-medium text-gray-600">Total Transactions</p>
+                            <h3 className="text-2xl font-bold text-gray-900 mt-2">{data.length}</h3>
+                        </div>
+                        <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <CreditCard className="w-6 h-6 text-blue-600" />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Total Income */}
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-medium text-gray-600">Total Income</p>
+                            <h3 className="text-2xl font-bold text-green-600 mt-2">
+                                Rp {new Intl.NumberFormat("id-ID").format(summary.totalIncome)}
+                            </h3>
+                        </div>
+                        <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                            <TrendingUp className="w-6 h-6 text-green-600" />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Total Expense */}
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-medium text-gray-600">Total Expense</p>
+                            <h3 className="text-2xl font-bold text-red-600 mt-2">
+                                Rp {new Intl.NumberFormat("id-ID").format(summary.totalExpense)}
+                            </h3>
+                        </div>
+                        <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                            <TrendingDown className="w-6 h-6 text-red-600" />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Net Cash Flow */}
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-medium text-gray-600">Net Cash Flow</p>
+                            <h3 className={`text-2xl font-bold mt-2 ${summary.netCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                Rp {new Intl.NumberFormat("id-ID").format(Math.abs(summary.netCashFlow))}
+                            </h3>
+                        </div>
+                        <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                            <DollarSign className={`w-6 h-6 ${summary.netCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`} />
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            {isLoading && <p>Loading...</p>}
-            
-            <DataTable 
-                columns={columns} 
-                data={data}
-                pageCount={pageCount}
-                page={page}
-                onPageChange={setPage}
-            />
+            {/* Search Bar */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <Input
+                        name="search"
+                        placeholder="Search by description or category..."
+                        className="pl-10 border-gray-200 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        value={search}
+                        onChange={(e) => {
+                            setSearch(e.target.value);
+                            setPage(1);
+                        }}
+                    />
+                </div>
+            </div>
 
+            {/* Filters */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                <div className="flex flex-wrap items-center gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                        <select
+                            value={typeFilter}
+                            onChange={(e) => setTypeFilter(e.target.value)}
+                            className="block px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                        >
+                            <option value="">All Types</option>
+                            <option value="INCOME">Income</option>
+                            <option value="EXPENSE">Expense</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Bank Account</label>
+                        <select
+                            value={bankAccountFilter}
+                            onChange={(e) => setBankAccountFilter(e.target.value)}
+                            className="block px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                        >
+                            <option value="">All Bank Accounts</option>
+                            {bankAccounts.map((account) => (
+                                <option key={account.id} value={account.id}>
+                                    {account.name} - {account.account_number}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            {/* Loading State */}
+            {isLoading && (
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                        <div className="w-5 h-5 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
+                        <p className="text-gray-500">Loading transactions...</p>
+                    </div>
+                </div>
+            )}
+
+            {/* Table Card */}
+            {!isLoading && (
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                    <div className="px-6 py-4 border-b border-gray-200">
+                        <h2 className="text-lg font-semibold text-gray-900">All Transactions</h2>
+                        <p className="text-sm text-gray-600 mt-1">
+                            Showing {data.length} transaction records
+                        </p>
+                    </div>
+                    <DataTable
+                        columns={columns}
+                        data={data}
+                        pageCount={pageCount}
+                        page={page}
+                        onPageChange={setPage}
+                    />
+                </div>
+            )}
+
+            {/* Modal */}
             <CashFlowModal
                 isOpen={isModalOpen}
                 onClose={handleCloseModal}

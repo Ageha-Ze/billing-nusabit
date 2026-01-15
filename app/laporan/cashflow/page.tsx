@@ -7,9 +7,7 @@ import { CashFlowWithDetails, BankAccount } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
-import { Download, TrendingUp, TrendingDown, DollarSign, Calendar, Plus } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import CashFlowModal from "@/app/keuangan/transaksiharian/ModalTambahTransaksi";
+import { Search, Download, TrendingUp, TrendingDown, DollarSign, CreditCard } from "lucide-react";
 
 export default function CashFlowReportPage() {
     const [data, setData] = useState<CashFlowWithDetails[]>([]);
@@ -23,8 +21,6 @@ export default function CashFlowReportPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
     const [summary, setSummary] = useState({ totalIncome: 0, totalExpense: 0, netCashFlow: 0 });
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedEntry, setSelectedEntry] = useState<CashFlowWithDetails | null>(null);
 
     const fetchBankAccounts = async () => {
         try {
@@ -71,17 +67,6 @@ export default function CashFlowReportPage() {
         }
     };
 
-    const handleOpenModal = (entry?: CashFlowWithDetails) => {
-        setSelectedEntry(entry || null);
-        setIsModalOpen(true);
-    };
-
-    const handleCloseModal = () => {
-        setSelectedEntry(null);
-        setIsModalOpen(false);
-        fetchData();
-    };
-
     useEffect(() => {
         fetchBankAccounts();
     }, []);
@@ -98,127 +83,184 @@ export default function CashFlowReportPage() {
         setSearch(newSearch);
     }
 
-    const columns = useMemo(() => getColumns(fetchData), [fetchData]);
+    const columns = useMemo(() => getColumns(fetchData, undefined, false), [fetchData]);
 
     return (
-        <div>
-            {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Income</CardTitle>
-                        <TrendingUp className="h-4 w-4 text-green-600" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-green-600">
-                            Rp {summary.totalIncome.toLocaleString()}
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Expense</CardTitle>
-                        <TrendingDown className="h-4 w-4 text-red-600" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-red-600">
-                            Rp {summary.totalExpense.toLocaleString()}
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Net Cash Flow</CardTitle>
-                        <DollarSign className={`h-4 w-4 ${summary.netCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`} />
-                    </CardHeader>
-                    <CardContent>
-                        <div className={`text-2xl font-bold ${summary.netCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            Rp {summary.netCashFlow.toLocaleString()}
-                        </div>
-                    </CardContent>
-                </Card>
+        <div className="p-6 max-w-7xl mx-auto space-y-6">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold text-gray-900">Cash Flow Report</h1>
+                    <p className="text-gray-600 mt-1">View and analyze daily cash flow transactions</p>
+                </div>
+                <Link href="/laporan/cashflow/export">
+                    <Button variant="outline" className="border-gray-200 hover:bg-gray-50">
+                        <Download className="w-5 h-5 mr-2" />
+                        Export Report
+                    </Button>
+                </Link>
             </div>
 
-            <div className="flex justify-between items-center mb-4">
-                <h1 className="text-2xl font-bold">Cash Flow Entries</h1>
-                <div className="flex gap-2">
-                    <Button onClick={() => handleOpenModal()}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add New Entry
-                    </Button>
-                    <Link href="/laporan/cashflow/export">
-                        <Button variant="outline">
-                            <Download className="h-4 w-4 mr-2" />
-                            Export Report
-                        </Button>
-                    </Link>
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Total Transactions */}
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-medium text-gray-600">Total Transactions</p>
+                            <h3 className="text-2xl font-bold text-gray-900 mt-2">{data.length}</h3>
+                        </div>
+                        <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <CreditCard className="w-6 h-6 text-blue-600" />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Total Income */}
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-medium text-gray-600">Total Income</p>
+                            <h3 className="text-2xl font-bold text-green-600 mt-2">
+                                Rp {new Intl.NumberFormat("id-ID").format(summary.totalIncome)}
+                            </h3>
+                        </div>
+                        <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                            <TrendingUp className="w-6 h-6 text-green-600" />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Total Expense */}
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-medium text-gray-600">Total Expense</p>
+                            <h3 className="text-2xl font-bold text-red-600 mt-2">
+                                Rp {new Intl.NumberFormat("id-ID").format(summary.totalExpense)}
+                            </h3>
+                        </div>
+                        <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                            <TrendingDown className="w-6 h-6 text-red-600" />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Net Cash Flow */}
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-medium text-gray-600">Net Cash Flow</p>
+                            <h3 className={`text-2xl font-bold mt-2 ${summary.netCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                Rp {new Intl.NumberFormat("id-ID").format(Math.abs(summary.netCashFlow))}
+                            </h3>
+                        </div>
+                        <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                            <DollarSign className={`w-6 h-6 ${summary.netCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`} />
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 mb-4">
-                <form onSubmit={handleSearch} className="flex items-center gap-2">
-                    <Input name="search" placeholder="Search by description or category..." className="max-w-sm"/>
-                    <Button type="submit">Search</Button>
-                </form>
-                {/* Type Filter */}
-                <select
-                    value={typeFilter}
-                    onChange={(e) => setTypeFilter(e.target.value)}
-                    className="mt-1 block px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                >
-                    <option value="">All Types</option>
-                    <option value="INCOME">Income</option>
-                    <option value="EXPENSE">Expense</option>
-                </select>
-
-                {/* Bank Account Filter */}
-                <select
-                    value={bankAccountFilter}
-                    onChange={(e) => setBankAccountFilter(e.target.value)}
-                    className="mt-1 block px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                >
-                    <option value="">All Bank Accounts</option>
-                    {bankAccounts.map((account) => (
-                        <option key={account.id} value={account.id}>
-                            {account.name} - {account.account_number}
-                        </option>
-                    ))}
-                </select>
-
-                {/* Date Range Filter */}
-                <Input
-                    type="date"
-                    placeholder="Start Date"
-                    value={startDateFilter}
-                    onChange={(e) => setStartDateFilter(e.target.value)}
-                    className="max-w-xs"
-                />
-                <Input
-                    type="date"
-                    placeholder="End Date"
-                    value={endDateFilter}
-                    onChange={(e) => setEndDateFilter(e.target.value)}
-                    className="max-w-xs"
-                />
+            {/* Search Bar */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <Input
+                        name="search"
+                        placeholder="Search by description or category..."
+                        className="pl-10 border-gray-200 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        value={search}
+                        onChange={(e) => {
+                            setSearch(e.target.value);
+                            setPage(1);
+                        }}
+                    />
+                </div>
             </div>
 
-            {isLoading && <p>Loading...</p>}
+            {/* Filters */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                <div className="flex flex-wrap items-center gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                        <select
+                            value={typeFilter}
+                            onChange={(e) => setTypeFilter(e.target.value)}
+                            className="block px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                        >
+                            <option value="">All Types</option>
+                            <option value="INCOME">Income</option>
+                            <option value="EXPENSE">Expense</option>
+                        </select>
+                    </div>
 
-            <DataTable
-                columns={columns}
-                data={data}
-                pageCount={pageCount}
-                page={page}
-                onPageChange={setPage}
-            />
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Bank Account</label>
+                        <select
+                            value={bankAccountFilter}
+                            onChange={(e) => setBankAccountFilter(e.target.value)}
+                            className="block px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                        >
+                            <option value="">All Bank Accounts</option>
+                            {bankAccounts.map((account) => (
+                                <option key={account.id} value={account.id}>
+                                    {account.name} - {account.account_number}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
 
-            <CashFlowModal
-                isOpen={isModalOpen}
-                onClose={handleCloseModal}
-                cashFlowEntry={selectedEntry}
-            />
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                        <Input
+                            type="date"
+                            value={startDateFilter}
+                            onChange={(e) => setStartDateFilter(e.target.value)}
+                            className="block px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                        <Input
+                            type="date"
+                            value={endDateFilter}
+                            onChange={(e) => setEndDateFilter(e.target.value)}
+                            className="block px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                        />
+                    </div>
+                </div>
+            </div>
+
+            {/* Loading State */}
+            {isLoading && (
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                        <div className="w-5 h-5 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
+                        <p className="text-gray-500">Loading cash flow data...</p>
+                    </div>
+                </div>
+            )}
+
+            {/* Table Card */}
+            {!isLoading && (
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                    <div className="px-6 py-4 border-b border-gray-200">
+                        <h2 className="text-lg font-semibold text-gray-900">All Cash Flow Entries</h2>
+                        <p className="text-sm text-gray-600 mt-1">
+                            Showing {data.length} cash flow records
+                        </p>
+                    </div>
+                    <DataTable
+                        columns={columns}
+                        data={data}
+                        pageCount={pageCount}
+                        page={page}
+                        onPageChange={setPage}
+                    />
+                </div>
+            )}
         </div>
     )
 }

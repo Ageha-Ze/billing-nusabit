@@ -29,7 +29,7 @@ const handleDelete = async (id: string, onDeleted: () => void) => {
     }
 }
 
-export const getColumns = (onDeleted: () => void, onEdit?: (invoice: InvoiceWithDetails) => void): ColumnDef<InvoiceWithDetails>[] => [
+export const getColumns = (onDeleted: () => void, onEdit?: (invoice: InvoiceWithDetails) => void, showActions: boolean = true): ColumnDef<InvoiceWithDetails>[] => [
   {
     accessorKey: "invoice_number",
     header: "Invoice #",
@@ -65,12 +65,12 @@ export const getColumns = (onDeleted: () => void, onEdit?: (invoice: InvoiceWith
     header: "Due Date",
     cell: ({ row }) => new Date(row.original.due_date).toLocaleDateString(),
   },
-  {
+  ...(showActions ? [{
     id: "actions",
-    cell: function Cell({ row }) {
+    cell: function Cell({ row }: any) {
         const invoice = row.original;
         const router = useRouter();
-   
+
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -85,7 +85,7 @@ export const getColumns = (onDeleted: () => void, onEdit?: (invoice: InvoiceWith
                 <Link href={`/invoice/${invoice.id}`}>View Invoice</Link>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onEdit?.(invoice)}>Edit invoice</DropdownMenuItem>
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 className="text-red-600"
                 onClick={() => handleDelete(invoice.id, onDeleted)}
               >
@@ -95,5 +95,5 @@ export const getColumns = (onDeleted: () => void, onEdit?: (invoice: InvoiceWith
           </DropdownMenu>
         )
       },
-  },
+  } as ColumnDef<InvoiceWithDetails>] : []),
 ];

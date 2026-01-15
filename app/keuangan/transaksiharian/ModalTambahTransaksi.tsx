@@ -14,14 +14,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createCashFlowEntry, updateCashFlowEntry } from "@/lib/actions/cashflow";
-import { CashFlow, BankAccount } from "@/types";
+import { CashFlowWithDetails, BankAccount } from "@/types";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 
 interface CashFlowModalProps {
   isOpen: boolean;
   onClose: () => void;
-  cashFlowEntry?: CashFlow | null;
+  cashFlowEntry?: CashFlowWithDetails | null;
 }
 
 export default function CashFlowModal({ isOpen, onClose, cashFlowEntry }: CashFlowModalProps) {

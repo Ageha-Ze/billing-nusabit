@@ -165,8 +165,7 @@ export async function GET(
             client = clientData;
         }
 
-        // Get invoice items or create from subscription
-        let items = [];
+        // Get invoice items with product information
         const { data: itemsData } = await supabaseAdmin
             .from('invoice_items')
             .select(`
@@ -175,9 +174,11 @@ export async function GET(
             `)
             .eq('invoice_id', id);
 
+        let items = [];
         if (itemsData && itemsData.length > 0) {
             items = itemsData;
         } else if (basicInvoice.subscription_id) {
+            // Fallback: create item from subscription if no invoice_items exist
             const { data: subscriptionData } = await supabaseAdmin
                 .from('subscriptions')
                 .select(`
@@ -193,11 +194,33 @@ export async function GET(
                     invoice_id: id,
                     description: subscriptionData.product.name || 'Subscription Service',
                     quantity: 1,
-                    unit_price: parseFloat(subscriptionData.product.price || '0'),
-                    total_price: parseFloat(subscriptionData.product.price || '0'),
+                    unit_price: parseFloat(basicInvoice.total_amount.toString()),
+                    total_price: parseFloat(basicInvoice.total_amount.toString()),
                     product: subscriptionData.product
                 }];
+            } else {
+                // If no subscription data, create a generic item with the total amount
+                items = [{
+                    id: 'generic-item',
+                    invoice_id: id,
+                    description: 'Service',
+                    quantity: 1,
+                    unit_price: parseFloat(basicInvoice.total_amount.toString()),
+                    total_price: parseFloat(basicInvoice.total_amount.toString()),
+                    product: null
+                }];
             }
+        } else {
+            // No subscription, create generic item with total amount
+            items = [{
+                id: 'generic-item',
+                invoice_id: id,
+                description: 'Service',
+                quantity: 1,
+                unit_price: parseFloat(basicInvoice.total_amount.toString()),
+                total_price: parseFloat(basicInvoice.total_amount.toString()),
+                product: null
+            }];
         }
 
         const invoiceData: InvoiceWithDetails = {

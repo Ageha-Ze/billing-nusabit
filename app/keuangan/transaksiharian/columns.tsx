@@ -1,7 +1,7 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { CashFlow } from "@/types";
+import { CashFlowWithDetails } from "@/types";
 import { MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,7 +28,7 @@ const handleDelete = async (id: number, onDeleted: () => void) => {
     }
 }
 
-export const getColumns = (onDeleted: () => void): ColumnDef<CashFlow>[] => [
+export const getColumns = (onDeleted: () => void, onEdit?: (entry: CashFlowWithDetails) => void, showActions: boolean = true): ColumnDef<CashFlowWithDetails>[] => [
   {
     accessorKey: "tanggal",
     header: "Date",
@@ -74,12 +74,12 @@ export const getColumns = (onDeleted: () => void): ColumnDef<CashFlow>[] => [
         return `${bankAccount.name} (${bankAccount.bank_name})`;
     }
   },
-  {
+  ...(showActions ? [{
     id: "actions",
-    cell: function Cell({ row }) {
+    cell: function Cell({ row }: any) {
         const entry = row.original;
         const router = useRouter();
-   
+
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -90,7 +90,7 @@ export const getColumns = (onDeleted: () => void): ColumnDef<CashFlow>[] => [
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => alert("Edit not implemented")}>Edit entry</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onEdit?.(entry)}>Edit entry</DropdownMenuItem>
               <DropdownMenuItem
                 className="text-red-600"
                 onClick={() => handleDelete(entry.id, onDeleted)}
@@ -101,5 +101,5 @@ export const getColumns = (onDeleted: () => void): ColumnDef<CashFlow>[] => [
           </DropdownMenu>
         )
       },
-  },
+  } as ColumnDef<CashFlowWithDetails>] : []),
 ];

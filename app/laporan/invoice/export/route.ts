@@ -55,7 +55,7 @@ export async function GET(request: Request) {
             { header: "Created At", accessorKey: "created_at" },
         ];
 
-        const csv = convertToCsv(data as InvoiceWithDetails[], columns);
+        const csv = convertToCsv(data as unknown as InvoiceWithDetails[], columns);
 
         return new NextResponse(csv, {
             headers: {

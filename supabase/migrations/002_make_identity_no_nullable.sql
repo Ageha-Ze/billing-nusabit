@@ -1,0 +1,1 @@
+ALTER TABLE clients ALTER COLUMN identity_no DROP NOT NULL;

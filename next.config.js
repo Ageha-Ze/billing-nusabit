@@ -9,9 +9,6 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
-
-  // Turbopack disabled due to memory issues
-  // turbopack: {},
 };
 
 module.exports = nextConfig;

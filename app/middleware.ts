@@ -2,6 +2,9 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { hasPermission, type PermissionKey } from '@/utils/permissions';
 import { User } from '@/types';
+import jwt from 'jsonwebtoken';
+
+const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-key-that-is-long-and-secure";
 
 // ============================================
 // ROUTE PERMISSION MAPPINGS (Billing/Invoicing App)
@@ -35,29 +38,30 @@ const ROUTE_PERMISSIONS: Record<string, PermissionKey[]> = {
 };
 
 /**
- * Get user from session cookie
+ * Get user from session cookie by verifying the JWT
  */
-function getUserFromSession(request: NextRequest): {
-  level: User['role'];
-  id: string;
-  username: string;
-  cabang_id?: number;
-} | null {
+function getUserFromSession(request: NextRequest): (User & { cabang_id?: number }) | null {
   try {
     const userSession = request.cookies.get('user_session')?.value;
     if (!userSession) return null;
 
-    const user = JSON.parse(userSession);
-    
-    // Validate user object has required fields
-    if (!user.level || !user.id) {
-      console.warn('Invalid user session: missing required fields');
-      return null;
+    // Verify the JWT
+    const decoded = jwt.verify(userSession, JWT_SECRET);
+
+    // Type guard to ensure decoded is a user payload
+    if (typeof decoded === 'object' && decoded !== null && 'id' in decoded && 'role' in decoded) {
+        return decoded as User;
     }
 
-    return user;
+    console.warn('Invalid user session: JWT payload is malformed');
+    return null;
+
   } catch (error) {
-    console.error('Failed to parse user session:', error);
+    if (error instanceof jwt.JsonWebTokenError) {
+      console.error('JWT Error:', error.message);
+    } else {
+      console.error('Failed to parse user session:', error);
+    }
     return null;
   }
 }
@@ -95,17 +99,17 @@ function isProtectedRoute(pathname: string): boolean {
 /**
  * Check if user has permission to access route
  */
-function hasRouteAccess(userLevel: User['role'], pathname: string): boolean {
+function hasRouteAccess(userRole: User['role'], pathname: string): boolean {
   // Find matching route permissions
   for (const [route, requiredPerms] of Object.entries(ROUTE_PERMISSIONS)) {
     if (pathname.startsWith(route)) {
       // User needs AT LEAST ONE of the required permissions
       const hasAccess = requiredPerms.some(perm => 
-        hasPermission(userLevel, perm)
+        hasPermission(userRole, perm)
       );
       
       if (!hasAccess) {
-        console.log(`Access denied: ${userLevel} lacks permissions for ${route}`, {
+        console.log(`Access denied: ${userRole} lacks permissions for ${route}`, {
           required: requiredPerms,
           route,
           pathname
@@ -138,7 +142,7 @@ export async function middleware(request: NextRequest) {
       }
 
       // Check route-level permissions
-      const hasAccess = hasRouteAccess(user.level, pathname);
+      const hasAccess = hasRouteAccess(user.role, pathname);
       
       if (!hasAccess) {
         // Redirect to unauthorized page
@@ -166,7 +170,7 @@ export async function middleware(request: NextRequest) {
     const response = NextResponse.next();
 
     if (user) {
-      response.headers.set('x-user-level', user.level);
+      response.headers.set('x-user-role', user.role);
       response.headers.set('x-user-id', user.id.toString());
       if (user.cabang_id) {
         response.headers.set('x-user-branch', user.cabang_id.toString());
